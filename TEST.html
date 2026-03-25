@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python For文ビジュアライザー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .code-active { background-color: #1e3a8a; color: #bfdbfe; border-left: 4px solid #60a5fa; }
+        .log-animate { animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .bounce-custom { animation: bounce 1s infinite; }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-6">
+    <div class="max-w-4xl mx-auto space-y-4">
+        <!-- Header -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-200">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="bg-blue-600 p-1.5 rounded-lg text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 18v-2a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 6v2a4 4 0 0 1-4 4H3"/></svg>
+                </div>
+                <h1 class="text-xl font-bold text-slate-800">Python For文 動作可視化</h1>
+            </div>
+            <div class="text-sm text-slate-600 space-y-1 leading-relaxed">
+                <p><code>for d in test_data:</code> で値が変数に入るタイミングを確認しましょう。</p>
+                <p>For文は、リストに入った<strong>要素の数だけ</strong>処理を繰り返します。</p>
+                <p>今回は <code>test_data = [0.4, 0.9, 1.5, 0.7]</code> と要素が <strong>4つ</strong> あるので、合計 <strong>4回</strong> 繰り返します。</p>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex flex-wrap gap-4 justify-center py-1 items-end bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex flex-col items-center gap-1">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">自動再生</span>
+                <button id="btn-play" class="flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition text-sm bg-blue-600 text-white hover:bg-blue-700">
+                    <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>再生</span>
+                </button>
+            </div>
+            
+            <div class="flex flex-col items-center gap-1">
+                <div class="flex items-center gap-1 text-[9px] font-bold text-blue-600 uppercase tracking-wider animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.373 8.373a1 1 0 1 1-1.414-1.414L12.586 12 5.213 4.627a1 1 0 0 1 1.414-1.414L15 12z"/><path d="m20 12-8.373 8.373a1 1 0 1 1-1.414-1.414L17.586 12 10.213 4.627a1 1 0 0 1 1.414-1.414L20 12z"/></svg>
+                    1行ずつ進める
+                </div>
+                <button id="btn-next" class="flex items-center gap-2 px-6 py-2 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 shadow-md transform active:scale-95 transition-all text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></svg>
+                    次へ
+                </button>
+            </div>
+
+            <div class="flex flex-col items-center gap-1">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">最初から</span>
+                <button id="btn-reset" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-bold hover:bg-slate-50 shadow-sm transition-all text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    リセット
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Left Column -->
+            <div class="space-y-4">
+                <!-- 1. 待機中のリスト -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-[155px]">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2 text-slate-500 font-semibold text-[10px] tracking-wider uppercase">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                            1. 待機中のリスト (test_data)
+                        </div>
+                        <span id="list-count" class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">残り: 4</span>
+                    </div>
+                    <div id="list-container" class="flex gap-2 min-h-[60px] items-center p-2 bg-slate-50 rounded-lg border border-dashed border-slate-300 overflow-x-auto transition-all">
+                        <!-- Items injected by JS -->
+                    </div>
+                    <div id="arrow-container" class="h-10 mt-2 flex justify-center opacity-0 transition-opacity duration-300">
+                        <div class="text-blue-500 bounce-custom flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                            <span id="picking-value" class="font-mono font-bold text-lg"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. ループ変数 -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex items-center gap-2 mb-2 text-slate-500 font-semibold text-[10px] tracking-wider uppercase">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+                        2. ループ変数: d
+                    </div>
+                    <div id="var-box" class="p-3 rounded-lg border-2 bg-slate-50 border-slate-100 transition-all duration-500 flex items-center justify-between">
+                        <span class="text-slate-500 font-mono text-xs"># いま代入されている値</span>
+                        <span id="var-text" class="text-xl font-mono font-bold text-amber-600">None</span>
+                    </div>
+                </div>
+
+                <!-- 3. コードブロック -->
+                <div class="bg-slate-900 p-4 rounded-xl shadow-lg text-slate-300 font-mono text-[11px] leading-relaxed border border-slate-700">
+                    <div class="flex items-center gap-2 mb-2 text-slate-500 text-[9px] uppercase tracking-tighter">3. Python Code</div>
+                    <div id="code-0" class="p-1 rounded transition-colors">
+                        test_data = [0.4, 0.9, 1.5, 0.7] <span class="text-slate-500 ml-2"># 要素が4つ</span>
+                    </div>
+                    <div id="code-1" class="p-1 rounded transition-colors">
+                        <span class="text-blue-400">print</span>(<span class="text-amber-300">"--- データ取り出しスタート ---"</span>)
+                    </div>
+                    <div id="code-2" class="p-1 rounded transition-colors">
+                        <span class="text-purple-400 font-bold">for</span> d <span class="text-purple-400 font-bold">in</span> test_data: <span class="text-slate-500 ml-2"># ★ここで代入ログが出る</span>
+                    </div>
+                    <div id="code-3" class="p-1 pl-4 rounded transition-colors">
+                        <span class="text-blue-400">print</span>(<span class="text-amber-300">f"取り出した値: {d}"</span>)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Console Output -->
+            <div class="bg-slate-950 rounded-xl overflow-hidden flex flex-col shadow-xl border border-slate-800 h-[460px]">
+                <div class="bg-slate-900 px-3 py-2 flex items-center justify-between border-b border-slate-800">
+                    <div class="flex items-center gap-2 text-slate-400 text-[10px] font-bold tracking-widest uppercase">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                        進捗ログ
+                    </div>
+                </div>
+                <div id="console-logs" class="p-4 flex-grow font-mono text-[12px] text-green-400 space-y-2 overflow-y-auto scrollbar-thin">
+                    <span class="text-slate-700 italic">「次へ」を押して開始</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compact Explanation Card -->
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
+            <h3 class="font-bold text-blue-800 text-sm mb-1 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                イメージの解説
+            </h3>
+            <p class="text-blue-700 text-xs leading-relaxed">
+                <code>for d in test_data:</code> が実行されるたびに、リストの先頭から値が1つ <code>d</code> に入り、リストからは消えていきます。
+                リストの要素が4つなら、この「取り出し」と「プリント」のセットを合計4回繰り返します。
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const testData = [0.4, 0.9, 1.5, 0.7];
+        let currentIndex = -1;
+        let phase = 'idle'; // 'idle', 'init', 'picking', 'printing', 'finished'
+        let logs = [];
+        let isPlaying = false;
+        let playInterval = null;
+
+        const elements = {
+            listContainer: document.getElementById('list-container'),
+            listCount: document.getElementById('list-count'),
+            arrowContainer: document.getElementById('arrow-container'),
+            pickingValue: document.getElementById('picking-value'),
+            varBox: document.getElementById('var-box'),
+            varText: document.getElementById('var-text'),
+            consoleLogs: document.getElementById('console-logs'),
+            btnNext: document.getElementById('btn-next'),
+            btnPlay: document.getElementById('btn-play'),
+            btnReset: document.getElementById('btn-reset'),
+            iconPlay: document.getElementById('icon-play')
+        };
+
+        function updateUI() {
+            // Update List
+            const remaining = (phase === 'idle' || phase === 'init') 
+                ? testData 
+                : testData.slice(currentIndex + (phase === 'picking' || phase === 'printing' ? 1 : 0));
+            
+            elements.listCount.innerText = `残り: ${remaining.length}`;
+            elements.listContainer.innerHTML = remaining.length > 0 
+                ? remaining.map(v => `<div class="min-w-[48px] h-10 flex items-center justify-center rounded-md border border-slate-200 bg-white font-mono font-bold text-sm shadow-sm text-slate-600 transition-all duration-500">${v}</div>`).join('')
+                : `<span class="text-slate-400 italic text-xs w-full text-center tracking-tight">空になりました []</span>`;
+
+            // Arrow & Picking animation
+            if (phase === 'picking') {
+                elements.arrowContainer.classList.remove('opacity-0');
+                elements.pickingValue.innerText = testData[currentIndex];
+            } else {
+                elements.arrowContainer.classList.add('opacity-0');
+            }
+
+            // Variable box
+            if (phase === 'picking' || phase === 'printing') {
+                elements.varBox.className = 'p-3 rounded-lg border-2 bg-amber-50 border-amber-400 shadow-sm scale-[1.02] transition-all duration-500 flex items-center justify-between';
+                elements.varText.innerText = testData[currentIndex];
+            } else {
+                elements.varBox.className = 'p-3 rounded-lg border-2 bg-slate-50 border-slate-100 transition-all duration-500 flex items-center justify-between';
+                elements.varText.innerText = 'None';
+            }
+
+            // Code Highlighting
+            for (let i = 0; i < 4; i++) {
+                const el = document.getElementById(`code-${i}`);
+                el.className = 'p-1 rounded transition-colors';
+                if (i === 0 && currentIndex === -1) el.classList.add('bg-slate-800', 'text-white');
+                if (i === 1 && phase === 'init') el.classList.add('code-active');
+                if (i === 2 && phase === 'picking') el.classList.add('code-active');
+                if (i === 3 && phase === 'printing') el.classList.add('code-active');
+            }
+
+            // Console Logs
+            if (logs.length === 0) {
+                elements.consoleLogs.innerHTML = `<span class="text-slate-700 italic">「次へ」を押して開始</span>`;
+            } else {
+                elements.consoleLogs.innerHTML = logs.map(log => {
+                    const isResult = log.startsWith('>') || log.startsWith('---');
+                    const styleClass = isResult 
+                        ? 'border-green-400 text-green-300 font-bold' 
+                        : 'border-green-900 text-green-600 text-[11px]';
+                    return `<div class="log-animate border-l pl-2 py-0.5 ${styleClass}">${log}</div>`;
+                }).join('');
+                if (phase === 'finished') {
+                    elements.consoleLogs.innerHTML += `<div class="mt-3 pt-3 border-t border-slate-800 text-center"><div class="text-slate-500 font-bold text-[11px]">リストが空になり、繰り返し終了</div></div>`;
+                }
+                elements.consoleLogs.scrollTop = elements.consoleLogs.scrollHeight;
+            }
+
+            // Button states
+            elements.btnNext.disabled = phase === 'finished';
+            elements.btnPlay.disabled = phase === 'finished';
+        }
+
+        function handleNextStep() {
+            if (currentIndex === -1) {
+                currentIndex = 0;
+                phase = 'init';
+                logs = ['--- データ取り出しスタート ---'];
+            } else if (phase === 'init' || phase === 'printing') {
+                if (phase === 'printing' && currentIndex >= testData.length - 1) {
+                    currentIndex = testData.length;
+                    phase = 'finished';
+                    stopAutoPlay();
+                } else {
+                    const nextIdx = phase === 'printing' ? currentIndex + 1 : currentIndex;
+                    currentIndex = nextIdx;
+                    phase = 'picking';
+                    const remainingList = testData.slice(nextIdx + 1);
+                    const remStr = remainingList.length > 0 ? `[${remainingList.join(', ')}]` : '[]  # 空になりました';
+                    logs.push(`${nextIdx + 1}回目 dに${testData[nextIdx]}が入りました。 残りtest_data = ${remStr}`);
+                }
+            } else if (phase === 'picking') {
+                phase = 'printing';
+                logs.push(`> 取り出した値: ${testData[currentIndex]}`);
+            }
+            updateUI();
+        }
+
+        function stopAutoPlay() {
+            isPlaying = false;
+            if (playInterval) clearInterval(playInterval);
+            elements.btnPlay.className = 'flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition text-sm bg-blue-600 text-white hover:bg-blue-700';
+            elements.iconPlay.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+            elements.btnPlay.querySelector('span').innerText = '再生';
+        }
+
+        elements.btnNext.onclick = handleNextStep;
+
+        elements.btnPlay.onclick = () => {
+            if (isPlaying) {
+                stopAutoPlay();
+            } else {
+                isPlaying = true;
+                elements.btnPlay.className = 'flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition text-sm bg-amber-100 text-amber-700';
+                elements.iconPlay.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+                elements.btnPlay.querySelector('span').innerText = '停止';
+                handleNextStep();
+                playInterval = setInterval(handleNextStep, 1500);
+            }
+        };
+
+        elements.btnReset.onclick = () => {
+            stopAutoPlay();
+            currentIndex = -1;
+            phase = 'idle';
+            logs = [];
+            updateUI();
+        };
+
+        // Initial setup
+        updateUI();
+    </script>
+</body>
+</html>
